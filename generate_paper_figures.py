@@ -359,28 +359,28 @@ def draw_representative_discovered_models() -> None:
     high_records = json.loads((high_path / "declare_model.json").read_text())
 
     fig = plt.figure(figsize=(10.6, 5.7))
-    grid = fig.add_gridspec(2, 2, height_ratios=[1.35, 0.72], hspace=0.34, wspace=0.28)
+    grid = fig.add_gridspec(2, 2, height_ratios=[1.35, 0.72], width_ratios=[1.30, 0.90], hspace=0.34, wspace=0.28)
     bpmn_ax = fig.add_subplot(grid[0, 0])
     declare_ax = fig.add_subplot(grid[0, 1])
     explanation_ax = fig.add_subplot(grid[1, :])
 
     bpmn_ax.set_title("Exported BPMN, rework $p=0.05$, seed 1001", fontsize=11, weight="bold", pad=8)
-    bpmn_ax.set_xlim(-0.02, 1.04)
+    bpmn_ax.set_xlim(-0.04, 1.12)
     bpmn_ax.set_ylim(0, 1)
     bpmn_ax.axis("off")
     positions = {
-        "start": (0.02, 0.50),
-        "Register": (0.11, 0.50),
-        "Check": (0.24, 0.50),
-        "Assess": (0.37, 0.50),
-        "XOR split": (0.50, 0.50),
-        "Decide": (0.64, 0.50),
-        "Notify": (0.77, 0.50),
-        "Archive": (0.90, 0.50),
-        "end": (0.99, 0.50),
-        "Manual review": (0.59, 0.78),
-        "Rework": (0.78, 0.78),
-        "XOR join": (0.50, 0.23),
+        "start": (0.025, 0.50),
+        "Register": (0.10, 0.50),
+        "Check": (0.25, 0.50),
+        "Assess": (0.40, 0.50),
+        "XOR split": (0.55, 0.50),
+        "Decide": (0.70, 0.50),
+        "Notify": (0.84, 0.50),
+        "Archive": (0.98, 0.50),
+        "end": (1.08, 0.50),
+        "Manual review": (0.65, 0.78),
+        "Rework": (0.87, 0.78),
+        "XOR join": (0.55, 0.23),
     }
     for source_id, target_id in edges:
         if nodes[source_id] not in {"Manual review", "Rework", "XOR join"} and nodes[target_id] not in {"Manual review", "Rework", "XOR join"}:
@@ -410,17 +410,17 @@ def draw_representative_discovered_models() -> None:
                 *position,
                 label,
                 "#b45309" if label in {"Manual review", "Rework"} else "#475569",
-                width=0.13 if label == "Manual review" else 0.105,
-                fontsize=7.5 if label == "Manual review" else 8.0,
+                width=0.13 if label == "Manual review" else 0.092,
+                fontsize=7.5 if label == "Manual review" else 7.6,
             )
     main_flow = ["start", "Register", "Check", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
-    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.0525, "Check": 0.0525, "Assess": 0.0525, "Decide": 0.0525, "Notify": 0.0525, "Archive": 0.0525}
+    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.046, "Check": 0.046, "Assess": 0.046, "Decide": 0.046, "Notify": 0.046, "Archive": 0.046}
     for source_label, target_label in zip(main_flow, main_flow[1:]):
         y = positions[source_label][1]
         start = (positions[source_label][0] + half_width[source_label], y)
         end = (positions[target_label][0] - half_width[target_label], y)
         _arrow(bpmn_ax, start, end, "#475569", linewidth=2.0)
-    bpmn_ax.text(0.54, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
+    bpmn_ax.text(0.55, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
 
     declare_ax.set_title("Selected exported Declare records", fontsize=11, weight="bold", pad=8)
     declare_ax.set_xlim(0, 1)
