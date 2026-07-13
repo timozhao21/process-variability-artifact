@@ -105,6 +105,7 @@ def _arrow(
     dashed: bool = False,
     curve: float = 0.0,
     linestyle: str | None = None,
+    linewidth: float = 1.4,
 ) -> None:
     line_style = linestyle if linestyle is not None else ("--" if dashed else "-")
     ax.add_patch(
@@ -113,7 +114,7 @@ def _arrow(
             end,
             arrowstyle="->",
             mutation_scale=10,
-            linewidth=1.4,
+            linewidth=linewidth,
             color=color,
             linestyle=line_style,
             connectionstyle=f"arc3,rad={curve}",
@@ -364,28 +365,37 @@ def draw_representative_discovered_models() -> None:
     explanation_ax = fig.add_subplot(grid[1, :])
 
     bpmn_ax.set_title("Exported BPMN, rework $p=0.05$, seed 1001", fontsize=11, weight="bold", pad=8)
-    bpmn_ax.set_xlim(0, 1)
+    bpmn_ax.set_xlim(-0.02, 1.04)
     bpmn_ax.set_ylim(0, 1)
     bpmn_ax.axis("off")
     positions = {
-        "start": (0.05, 0.50),
-        "Register": (0.13, 0.50),
-        "Check": (0.26, 0.50),
-        "Assess": (0.39, 0.50),
-        "XOR split": (0.53, 0.50),
-        "Decide": (0.67, 0.50),
-        "Notify": (0.79, 0.50),
-        "Archive": (0.91, 0.50),
-        "end": (0.98, 0.50),
-        "Manual review": (0.64, 0.78),
-        "Rework": (0.80, 0.78),
-        "XOR join": (0.54, 0.23),
+        "start": (0.02, 0.50),
+        "Register": (0.11, 0.50),
+        "Check": (0.24, 0.50),
+        "Assess": (0.37, 0.50),
+        "XOR split": (0.50, 0.50),
+        "Decide": (0.64, 0.50),
+        "Notify": (0.77, 0.50),
+        "Archive": (0.90, 0.50),
+        "end": (0.99, 0.50),
+        "Manual review": (0.59, 0.78),
+        "Rework": (0.78, 0.78),
+        "XOR join": (0.50, 0.23),
     }
     for source_id, target_id in edges:
+        if nodes[source_id] not in {"Manual review", "Rework", "XOR join"} and nodes[target_id] not in {"Manual review", "Rework", "XOR join"}:
+            continue
         source = positions[nodes[source_id]]
         target = positions[nodes[target_id]]
         loop_edge = nodes[source_id] in {"Manual review", "Rework", "XOR join"} or nodes[target_id] in {"Manual review", "Rework", "XOR join"}
-        _arrow(bpmn_ax, source, target, "#b45309" if loop_edge else "#475569", curve=0.12 if loop_edge else 0.0)
+        _arrow(
+            bpmn_ax,
+            source,
+            target,
+            "#b45309" if loop_edge else "#475569",
+            curve=0.12 if loop_edge else 0.0,
+            linewidth=1.9 if loop_edge else 1.7,
+        )
     for label, position in positions.items():
         if label not in nodes.values():
             continue
@@ -400,9 +410,16 @@ def draw_representative_discovered_models() -> None:
                 *position,
                 label,
                 "#b45309" if label in {"Manual review", "Rework"} else "#475569",
-                width=0.14 if label == "Manual review" else 0.11,
+                width=0.13 if label == "Manual review" else 0.105,
                 fontsize=7.5 if label == "Manual review" else 8.0,
             )
+    main_flow = ["start", "Register", "Check", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
+    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.0525, "Check": 0.0525, "Assess": 0.0525, "Decide": 0.0525, "Notify": 0.0525, "Archive": 0.0525}
+    for source_label, target_label in zip(main_flow, main_flow[1:]):
+        y = positions[source_label][1]
+        start = (positions[source_label][0] + half_width[source_label], y)
+        end = (positions[target_label][0] - half_width[target_label], y)
+        _arrow(bpmn_ax, start, end, "#475569", linewidth=2.0)
     bpmn_ax.text(0.54, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
 
     declare_ax.set_title("Selected exported Declare records", fontsize=11, weight="bold", pad=8)
