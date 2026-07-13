@@ -335,9 +335,9 @@ def _model_box(
     label = "Manual\nreview" if text == "Manual review" else text
     ax.add_patch(
         FancyBboxPatch(
-            (x - width / 2, y - 0.065),
+            (x - width / 2, y - 0.052),
             width,
-            0.13,
+            0.104,
             boxstyle="round,pad=0.01,rounding_size=0.01",
             linewidth=1.5,
             edgecolor=color,
@@ -410,11 +410,11 @@ def draw_representative_discovered_models() -> None:
                 *position,
                 label,
                 "#b45309" if label in {"Manual review", "Rework"} else "#475569",
-                width=0.13 if label == "Manual review" else 0.10,
-                fontsize=7.5 if label == "Manual review" else 8.0,
+                width=0.11 if label == "Manual review" else 0.08,
+                fontsize=7.2 if label == "Manual review" else 7.6,
             )
     main_flow = ["start", "Register", "Check", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
-    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.05, "Check": 0.05, "Assess": 0.05, "Decide": 0.05, "Notify": 0.05, "Archive": 0.05}
+    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.04, "Check": 0.04, "Assess": 0.04, "Decide": 0.04, "Notify": 0.04, "Archive": 0.04}
     for source_label, target_label in zip(main_flow, main_flow[1:]):
         y = positions[source_label][1]
         start = (positions[source_label][0] + half_width[source_label], y)
