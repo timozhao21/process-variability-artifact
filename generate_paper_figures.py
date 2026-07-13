@@ -322,6 +322,30 @@ def _constraint_record(records: list[dict], template: str, parameters: tuple[str
     raise KeyError((template, parameters))
 
 
+def _model_box(
+    ax: plt.Axes,
+    x: float,
+    y: float,
+    text: str,
+    color: str = "#334155",
+    width: float = 0.11,
+    fontsize: float = 8.0,
+) -> None:
+    label = "Manual\nreview" if text == "Manual review" else text
+    ax.add_patch(
+        FancyBboxPatch(
+            (x - width / 2, y - 0.065),
+            width,
+            0.13,
+            boxstyle="round,pad=0.01,rounding_size=0.01",
+            linewidth=1.5,
+            edgecolor=color,
+            facecolor="#f8fafc",
+        )
+    )
+    ax.text(x, y, label, ha="center", va="center", fontsize=fontsize, color="#1e293b", linespacing=0.9)
+
+
 def draw_representative_discovered_models() -> None:
     """Show a readable, simplified view derived from two exported models."""
     base = ROOT / "outputs" / "main" / "artifacts"
@@ -345,16 +369,16 @@ def draw_representative_discovered_models() -> None:
     bpmn_ax.axis("off")
     positions = {
         "start": (0.05, 0.50),
-        "Register": (0.14, 0.50),
-        "Check": (0.27, 0.50),
-        "Assess": (0.40, 0.50),
-        "XOR split": (0.54, 0.50),
-        "Decide": (0.68, 0.50),
-        "Notify": (0.80, 0.50),
+        "Register": (0.13, 0.50),
+        "Check": (0.26, 0.50),
+        "Assess": (0.39, 0.50),
+        "XOR split": (0.53, 0.50),
+        "Decide": (0.67, 0.50),
+        "Notify": (0.79, 0.50),
         "Archive": (0.91, 0.50),
         "end": (0.98, 0.50),
-        "Manual review": (0.63, 0.78),
-        "Rework": (0.77, 0.78),
+        "Manual review": (0.64, 0.78),
+        "Rework": (0.80, 0.78),
         "XOR join": (0.54, 0.23),
     }
     for source_id, target_id in edges:
@@ -371,8 +395,15 @@ def draw_representative_discovered_models() -> None:
         elif label in {"start", "end"}:
             bpmn_ax.scatter(*position, s=90, color="#94a3b8", edgecolor="#334155", zorder=3)
         else:
-            _box(bpmn_ax, *position, label, "#b45309" if label in {"Manual review", "Rework"} else "#475569")
-    bpmn_ax.text(0.54, 0.05, "Simplified layout derived from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
+            _model_box(
+                bpmn_ax,
+                *position,
+                label,
+                "#b45309" if label in {"Manual review", "Rework"} else "#475569",
+                width=0.14 if label == "Manual review" else 0.11,
+                fontsize=7.5 if label == "Manual review" else 8.0,
+            )
+    bpmn_ax.text(0.54, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
 
     declare_ax.set_title("Selected exported Declare records", fontsize=11, weight="bold", pad=8)
     declare_ax.set_xlim(0, 1)
@@ -383,22 +414,25 @@ def draw_representative_discovered_models() -> None:
     _constraint_record(high_records, "coexistence", ("Manual review", "Rework"))
     _constraint_record(high_records, "succession", ("Manual review", "Rework"))
     _constraint_record(high_records, "response", ("Rework", "Assess"))
-    declare_ax.text(0.02, 0.86, "Seed 1001: 37/67 constraints", fontsize=9.2, weight="bold", color="#7f1d1d")
-    declare_ax.text(0.05, 0.73, f"exactly_one(Assess)  c={low_exact['confidence_ratio']:.3f}", fontsize=8.6, family="monospace", color="#b91c1c")
-    declare_ax.text(0.05, 0.63, "succession(Check, Assess)", fontsize=8.6, family="monospace", color="#475569")
-    declare_ax.text(0.02, 0.46, "Seed 1004: 64/96 constraints", fontsize=9.2, weight="bold", color="#166534")
-    declare_ax.text(0.05, 0.33, "coexistence(Manual review, Rework)", fontsize=8.4, family="monospace", color="#15803d")
-    declare_ax.text(0.05, 0.23, "succession(Manual review, Rework)", fontsize=8.4, family="monospace", color="#15803d")
-    declare_ax.text(0.05, 0.13, "response(Rework, Assess)", fontsize=8.4, family="monospace", color="#15803d")
+    declare_ax.add_patch(FancyBboxPatch((0.01, 0.53), 0.98, 0.40, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#fecaca", facecolor="#fff7f7"))
+    declare_ax.add_patch(FancyBboxPatch((0.01, 0.05), 0.98, 0.40, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#bbf7d0", facecolor="#f0fdf4"))
+    declare_ax.text(0.04, 0.84, "Seed 1001: 37/67 constraints", fontsize=9.2, weight="bold", color="#7f1d1d")
+    declare_ax.text(0.06, 0.70, f"exactly_one(Assess)  c={low_exact['confidence_ratio']:.3f}", fontsize=8.5, family="monospace", color="#b91c1c")
+    declare_ax.text(0.06, 0.59, "succession(Check, Assess)", fontsize=8.5, family="monospace", color="#475569")
+    declare_ax.text(0.04, 0.36, "Seed 1004: 64/96 constraints", fontsize=9.2, weight="bold", color="#166534")
+    declare_ax.text(0.06, 0.25, "coexistence(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
+    declare_ax.text(0.06, 0.15, "succession(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
+    declare_ax.text(0.06, 0.07, "response(Rework, Assess)", fontsize=8.1, family="monospace", color="#15803d")
 
     explanation_ax.set_xlim(0, 1)
     explanation_ax.set_ylim(0, 1)
     explanation_ax.axis("off")
-    explanation_ax.add_patch(FancyBboxPatch((0.01, 0.08), 0.98, 0.84, boxstyle="round,pad=0.015,rounding_size=0.01", linewidth=1.0, edgecolor="#cbd5e1", facecolor="#f8fafc"))
-    explanation_ax.text(0.03, 0.73, "Why the seeds behave differently", fontsize=10, weight="bold", color="#1e293b")
-    explanation_ax.text(0.03, 0.48, "Seed 1001 retains exactly_one(Assess), so the model rejects a valid trace with a second Assess and reaches F1_cls = 0.588.", fontsize=9, color="#334155")
-    explanation_ax.text(0.03, 0.27, "Seed 1004 omits that occurrence rule and retains rework-specific relations, so it accepts the valid rework behavior and reaches F1_cls = 1.000.", fontsize=9, color="#334155")
-    explanation_ax.text(0.03, 0.11, "Both panels are simplified displays derived from exported discovery models; the complete BPMN and Declare files remain in the artifact.", fontsize=8.2, color="#64748b")
+    explanation_ax.add_patch(FancyBboxPatch((0.01, 0.04), 0.98, 0.92, boxstyle="round,pad=0.015,rounding_size=0.01", linewidth=1.0, edgecolor="#cbd5e1", facecolor="#f8fafc"))
+    explanation_ax.text(0.03, 0.82, "Why the seeds behave differently", fontsize=10, weight="bold", color="#1e293b")
+    explanation_ax.text(0.03, 0.60, "Seed 1001 retains exactly_one(Assess). The model therefore rejects a valid trace with a second Assess", fontsize=8.6, color="#334155")
+    explanation_ax.text(0.03, 0.48, "and reaches F1_cls = 0.588. Seed 1004 omits that rule and retains rework-specific relations,", fontsize=8.6, color="#334155")
+    explanation_ax.text(0.03, 0.36, "so it accepts the valid rework behavior and reaches F1_cls = 1.000.", fontsize=8.6, color="#334155")
+    explanation_ax.text(0.03, 0.16, "Both panels are simplified displays derived from exported discovery models; the complete BPMN and Declare files remain in the artifact.", fontsize=8.0, color="#64748b")
     _save(fig, FIGURES, "representative_discovered_models")
 
 
