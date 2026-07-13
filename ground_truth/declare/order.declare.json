@@ -1,0 +1,29 @@
+{
+  "scenario": "order",
+  "model_role": "hand_authored_ground_truth_declare_projection",
+  "exact_trace_language": "../valid_variants.csv",
+  "note": "This file documents the intended declarative constraints for the alternative-ordering ground truth. No fixed precedence between Check and Assess is imposed, because both orders are valid.",
+  "activities": ["Register", "Check", "Assess", "Decide", "Notify", "Archive"],
+  "templates": ["init", "exactly_one", "response", "precedence"],
+  "constraints": [
+    {"template": "init", "parameters": ["Register"]},
+    {"template": "exactly_one", "parameters": ["Register"]},
+    {"template": "exactly_one", "parameters": ["Check"]},
+    {"template": "exactly_one", "parameters": ["Assess"]},
+    {"template": "exactly_one", "parameters": ["Decide"]},
+    {"template": "exactly_one", "parameters": ["Notify"]},
+    {"template": "exactly_one", "parameters": ["Archive"]},
+    {"template": "response", "parameters": ["Register", "Check"]},
+    {"template": "response", "parameters": ["Register", "Assess"]},
+    {"template": "response", "parameters": ["Check", "Decide"]},
+    {"template": "response", "parameters": ["Assess", "Decide"]},
+    {"template": "response", "parameters": ["Decide", "Notify"]},
+    {"template": "response", "parameters": ["Notify", "Archive"]},
+    {"template": "precedence", "parameters": ["Register", "Check"]},
+    {"template": "precedence", "parameters": ["Register", "Assess"]},
+    {"template": "precedence", "parameters": ["Check", "Decide"]},
+    {"template": "precedence", "parameters": ["Assess", "Decide"]},
+    {"template": "precedence", "parameters": ["Decide", "Notify"]},
+    {"template": "precedence", "parameters": ["Notify", "Archive"]}
+  ]
+}

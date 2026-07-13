@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="Definitions_GroundTruth_Mixed"
+             targetNamespace="https://example.org/spaghetti-experiment/ground-truth/mixed">
+  <process id="GroundTruth_Mixed" name="Ground Truth - Mixed Variability" isExecutable="false">
+    <startEvent id="StartEvent" name="start" />
+    <task id="Task_Register" name="Register" />
+    <exclusiveGateway id="Gateway_Order_Choice" name="choose order" />
+
+    <task id="Task_Check_Normal" name="Check" />
+    <exclusiveGateway id="Gateway_Documents_Normal_Choice" name="include request documents?" />
+    <task id="Task_RequestDocuments_Normal" name="Request documents" />
+    <exclusiveGateway id="Gateway_Documents_Normal_Join" name="documents branch joined" />
+    <task id="Task_Assess_Normal" name="Assess" />
+    <exclusiveGateway id="Gateway_Review_Normal_Choice" name="include review or rework?" />
+    <task id="Task_ManualReview_Normal_Only" name="Manual review" />
+    <task id="Task_ManualReview_Normal_Rework" name="Manual review" />
+    <task id="Task_Rework_Normal" name="Rework" />
+    <task id="Task_Assess_Normal_AfterRework" name="Assess" />
+    <exclusiveGateway id="Gateway_Review_Normal_Join" name="review branch joined" />
+
+    <task id="Task_Assess_Swapped" name="Assess" />
+    <exclusiveGateway id="Gateway_Review_Swapped_Choice" name="include review or rework?" />
+    <task id="Task_ManualReview_Swapped_Only" name="Manual review" />
+    <task id="Task_ManualReview_Swapped_Rework" name="Manual review" />
+    <task id="Task_Rework_Swapped" name="Rework" />
+    <task id="Task_Assess_Swapped_AfterRework" name="Assess" />
+    <exclusiveGateway id="Gateway_Review_Swapped_Join" name="review branch joined" />
+    <task id="Task_Check_Swapped" name="Check" />
+    <exclusiveGateway id="Gateway_Documents_Swapped_Choice" name="include request documents?" />
+    <task id="Task_RequestDocuments_Swapped" name="Request documents" />
+    <exclusiveGateway id="Gateway_Documents_Swapped_Join" name="documents branch joined" />
+
+    <exclusiveGateway id="Gateway_Order_Join" name="order branch joined" />
+    <task id="Task_Decide" name="Decide" />
+    <task id="Task_Notify" name="Notify" />
+    <task id="Task_Archive" name="Archive" />
+    <endEvent id="EndEvent" name="end" />
+
+    <sequenceFlow id="Flow_Start_Register" sourceRef="StartEvent" targetRef="Task_Register" />
+    <sequenceFlow id="Flow_Register_OrderChoice" sourceRef="Task_Register" targetRef="Gateway_Order_Choice" />
+
+    <sequenceFlow id="Flow_OrderChoice_Normal" name="Check before Assess" sourceRef="Gateway_Order_Choice" targetRef="Task_Check_Normal" />
+    <sequenceFlow id="Flow_CheckNormal_DocumentsChoice" sourceRef="Task_Check_Normal" targetRef="Gateway_Documents_Normal_Choice" />
+    <sequenceFlow id="Flow_DocumentsNormal_Include" name="include" sourceRef="Gateway_Documents_Normal_Choice" targetRef="Task_RequestDocuments_Normal" />
+    <sequenceFlow id="Flow_RequestDocumentsNormal_Join" sourceRef="Task_RequestDocuments_Normal" targetRef="Gateway_Documents_Normal_Join" />
+    <sequenceFlow id="Flow_DocumentsNormal_Skip" name="skip" sourceRef="Gateway_Documents_Normal_Choice" targetRef="Gateway_Documents_Normal_Join" />
+    <sequenceFlow id="Flow_DocumentsNormal_Assess" sourceRef="Gateway_Documents_Normal_Join" targetRef="Task_Assess_Normal" />
+    <sequenceFlow id="Flow_AssessNormal_ReviewChoice" sourceRef="Task_Assess_Normal" targetRef="Gateway_Review_Normal_Choice" />
+    <sequenceFlow id="Flow_ReviewNormal_Skip" name="skip" sourceRef="Gateway_Review_Normal_Choice" targetRef="Gateway_Review_Normal_Join" />
+    <sequenceFlow id="Flow_ReviewNormal_Only" name="manual review only" sourceRef="Gateway_Review_Normal_Choice" targetRef="Task_ManualReview_Normal_Only" />
+    <sequenceFlow id="Flow_ManualReviewNormalOnly_Join" sourceRef="Task_ManualReview_Normal_Only" targetRef="Gateway_Review_Normal_Join" />
+    <sequenceFlow id="Flow_ReviewNormal_Rework" name="rework" sourceRef="Gateway_Review_Normal_Choice" targetRef="Task_ManualReview_Normal_Rework" />
+    <sequenceFlow id="Flow_ManualReviewNormalRework_Rework" sourceRef="Task_ManualReview_Normal_Rework" targetRef="Task_Rework_Normal" />
+    <sequenceFlow id="Flow_ReworkNormal_AssessAfterRework" sourceRef="Task_Rework_Normal" targetRef="Task_Assess_Normal_AfterRework" />
+    <sequenceFlow id="Flow_AssessNormalAfterRework_Join" sourceRef="Task_Assess_Normal_AfterRework" targetRef="Gateway_Review_Normal_Join" />
+    <sequenceFlow id="Flow_ReviewNormalJoin_OrderJoin" sourceRef="Gateway_Review_Normal_Join" targetRef="Gateway_Order_Join" />
+
+    <sequenceFlow id="Flow_OrderChoice_Swapped" name="Assess before Check" sourceRef="Gateway_Order_Choice" targetRef="Task_Assess_Swapped" />
+    <sequenceFlow id="Flow_AssessSwapped_ReviewChoice" sourceRef="Task_Assess_Swapped" targetRef="Gateway_Review_Swapped_Choice" />
+    <sequenceFlow id="Flow_ReviewSwapped_Skip" name="skip" sourceRef="Gateway_Review_Swapped_Choice" targetRef="Gateway_Review_Swapped_Join" />
+    <sequenceFlow id="Flow_ReviewSwapped_Only" name="manual review only" sourceRef="Gateway_Review_Swapped_Choice" targetRef="Task_ManualReview_Swapped_Only" />
+    <sequenceFlow id="Flow_ManualReviewSwappedOnly_Join" sourceRef="Task_ManualReview_Swapped_Only" targetRef="Gateway_Review_Swapped_Join" />
+    <sequenceFlow id="Flow_ReviewSwapped_Rework" name="rework" sourceRef="Gateway_Review_Swapped_Choice" targetRef="Task_ManualReview_Swapped_Rework" />
+    <sequenceFlow id="Flow_ManualReviewSwappedRework_Rework" sourceRef="Task_ManualReview_Swapped_Rework" targetRef="Task_Rework_Swapped" />
+    <sequenceFlow id="Flow_ReworkSwapped_AssessAfterRework" sourceRef="Task_Rework_Swapped" targetRef="Task_Assess_Swapped_AfterRework" />
+    <sequenceFlow id="Flow_AssessSwappedAfterRework_Join" sourceRef="Task_Assess_Swapped_AfterRework" targetRef="Gateway_Review_Swapped_Join" />
+    <sequenceFlow id="Flow_ReviewSwappedJoin_Check" sourceRef="Gateway_Review_Swapped_Join" targetRef="Task_Check_Swapped" />
+    <sequenceFlow id="Flow_CheckSwapped_DocumentsChoice" sourceRef="Task_Check_Swapped" targetRef="Gateway_Documents_Swapped_Choice" />
+    <sequenceFlow id="Flow_DocumentsSwapped_Include" name="include" sourceRef="Gateway_Documents_Swapped_Choice" targetRef="Task_RequestDocuments_Swapped" />
+    <sequenceFlow id="Flow_RequestDocumentsSwapped_Join" sourceRef="Task_RequestDocuments_Swapped" targetRef="Gateway_Documents_Swapped_Join" />
+    <sequenceFlow id="Flow_DocumentsSwapped_Skip" name="skip" sourceRef="Gateway_Documents_Swapped_Choice" targetRef="Gateway_Documents_Swapped_Join" />
+    <sequenceFlow id="Flow_DocumentsSwapped_OrderJoin" sourceRef="Gateway_Documents_Swapped_Join" targetRef="Gateway_Order_Join" />
+
+    <sequenceFlow id="Flow_OrderJoin_Decide" sourceRef="Gateway_Order_Join" targetRef="Task_Decide" />
+    <sequenceFlow id="Flow_Decide_Notify" sourceRef="Task_Decide" targetRef="Task_Notify" />
+    <sequenceFlow id="Flow_Notify_Archive" sourceRef="Task_Notify" targetRef="Task_Archive" />
+    <sequenceFlow id="Flow_Archive_End" sourceRef="Task_Archive" targetRef="EndEvent" />
+  </process>
+</definitions>

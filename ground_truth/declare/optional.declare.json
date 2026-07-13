@@ -1,0 +1,31 @@
+{
+  "scenario": "optional",
+  "model_role": "hand_authored_ground_truth_declare_projection",
+  "exact_trace_language": "../valid_variants.csv",
+  "note": "This file documents the intended declarative constraints for the optional-activity ground truth. Optional activities are constrained only when they occur; the exact finite trace language is listed in valid_variants.csv.",
+  "activities": ["Register", "Check", "Request documents", "Assess", "Manual review", "Decide", "Notify", "Archive"],
+  "templates": ["init", "exactly_one", "response", "precedence"],
+  "constraints": [
+    {"template": "init", "parameters": ["Register"]},
+    {"template": "exactly_one", "parameters": ["Register"]},
+    {"template": "exactly_one", "parameters": ["Check"]},
+    {"template": "exactly_one", "parameters": ["Assess"]},
+    {"template": "exactly_one", "parameters": ["Decide"]},
+    {"template": "exactly_one", "parameters": ["Notify"]},
+    {"template": "exactly_one", "parameters": ["Archive"]},
+    {"template": "response", "parameters": ["Register", "Check"]},
+    {"template": "response", "parameters": ["Check", "Assess"]},
+    {"template": "response", "parameters": ["Assess", "Decide"]},
+    {"template": "response", "parameters": ["Decide", "Notify"]},
+    {"template": "response", "parameters": ["Notify", "Archive"]},
+    {"template": "response", "parameters": ["Request documents", "Assess"]},
+    {"template": "response", "parameters": ["Manual review", "Decide"]},
+    {"template": "precedence", "parameters": ["Register", "Check"]},
+    {"template": "precedence", "parameters": ["Check", "Assess"]},
+    {"template": "precedence", "parameters": ["Assess", "Decide"]},
+    {"template": "precedence", "parameters": ["Decide", "Notify"]},
+    {"template": "precedence", "parameters": ["Notify", "Archive"]},
+    {"template": "precedence", "parameters": ["Check", "Request documents"]},
+    {"template": "precedence", "parameters": ["Assess", "Manual review"]}
+  ]
+}

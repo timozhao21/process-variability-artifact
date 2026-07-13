@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="Definitions_GroundTruth_Optional"
+             targetNamespace="https://example.org/spaghetti-experiment/ground-truth/optional">
+  <process id="GroundTruth_Optional" name="Ground Truth - Optional Activities" isExecutable="false">
+    <startEvent id="StartEvent" name="start" />
+    <task id="Task_Register" name="Register" />
+    <task id="Task_Check" name="Check" />
+    <exclusiveGateway id="Gateway_RequestDocuments_Choice" name="include request documents?" />
+    <task id="Task_RequestDocuments" name="Request documents" />
+    <exclusiveGateway id="Gateway_RequestDocuments_Join" name="documents branch joined" />
+    <task id="Task_Assess" name="Assess" />
+    <exclusiveGateway id="Gateway_ManualReview_Choice" name="include manual review?" />
+    <task id="Task_ManualReview" name="Manual review" />
+    <exclusiveGateway id="Gateway_ManualReview_Join" name="review branch joined" />
+    <task id="Task_Decide" name="Decide" />
+    <task id="Task_Notify" name="Notify" />
+    <task id="Task_Archive" name="Archive" />
+    <endEvent id="EndEvent" name="end" />
+
+    <sequenceFlow id="Flow_Start_Register" sourceRef="StartEvent" targetRef="Task_Register" />
+    <sequenceFlow id="Flow_Register_Check" sourceRef="Task_Register" targetRef="Task_Check" />
+    <sequenceFlow id="Flow_Check_DocumentChoice" sourceRef="Task_Check" targetRef="Gateway_RequestDocuments_Choice" />
+    <sequenceFlow id="Flow_DocumentChoice_Include" name="include" sourceRef="Gateway_RequestDocuments_Choice" targetRef="Task_RequestDocuments" />
+    <sequenceFlow id="Flow_RequestDocuments_DocumentJoin" sourceRef="Task_RequestDocuments" targetRef="Gateway_RequestDocuments_Join" />
+    <sequenceFlow id="Flow_DocumentChoice_Skip" name="skip" sourceRef="Gateway_RequestDocuments_Choice" targetRef="Gateway_RequestDocuments_Join" />
+    <sequenceFlow id="Flow_DocumentJoin_Assess" sourceRef="Gateway_RequestDocuments_Join" targetRef="Task_Assess" />
+    <sequenceFlow id="Flow_Assess_ReviewChoice" sourceRef="Task_Assess" targetRef="Gateway_ManualReview_Choice" />
+    <sequenceFlow id="Flow_ReviewChoice_Include" name="include" sourceRef="Gateway_ManualReview_Choice" targetRef="Task_ManualReview" />
+    <sequenceFlow id="Flow_ManualReview_ReviewJoin" sourceRef="Task_ManualReview" targetRef="Gateway_ManualReview_Join" />
+    <sequenceFlow id="Flow_ReviewChoice_Skip" name="skip" sourceRef="Gateway_ManualReview_Choice" targetRef="Gateway_ManualReview_Join" />
+    <sequenceFlow id="Flow_ReviewJoin_Decide" sourceRef="Gateway_ManualReview_Join" targetRef="Task_Decide" />
+    <sequenceFlow id="Flow_Decide_Notify" sourceRef="Task_Decide" targetRef="Task_Notify" />
+    <sequenceFlow id="Flow_Notify_Archive" sourceRef="Task_Notify" targetRef="Task_Archive" />
+    <sequenceFlow id="Flow_Archive_End" sourceRef="Task_Archive" targetRef="EndEvent" />
+  </process>
+</definitions>

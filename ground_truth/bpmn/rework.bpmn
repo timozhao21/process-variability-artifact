@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="Definitions_GroundTruth_Rework"
+             targetNamespace="https://example.org/spaghetti-experiment/ground-truth/rework">
+  <process id="GroundTruth_Rework" name="Ground Truth - Rework" isExecutable="false">
+    <startEvent id="StartEvent" name="start" />
+    <task id="Task_Register" name="Register" />
+    <task id="Task_Check" name="Check" />
+    <task id="Task_Assess_Initial" name="Assess" />
+    <exclusiveGateway id="Gateway_Rework_Choice" name="include rework?" />
+    <task id="Task_ManualReview" name="Manual review" />
+    <task id="Task_Rework" name="Rework" />
+    <task id="Task_Assess_AfterRework" name="Assess" />
+    <exclusiveGateway id="Gateway_Rework_Join" name="rework branch joined" />
+    <task id="Task_Decide" name="Decide" />
+    <task id="Task_Notify" name="Notify" />
+    <task id="Task_Archive" name="Archive" />
+    <endEvent id="EndEvent" name="end" />
+
+    <sequenceFlow id="Flow_Start_Register" sourceRef="StartEvent" targetRef="Task_Register" />
+    <sequenceFlow id="Flow_Register_Check" sourceRef="Task_Register" targetRef="Task_Check" />
+    <sequenceFlow id="Flow_Check_AssessInitial" sourceRef="Task_Check" targetRef="Task_Assess_Initial" />
+    <sequenceFlow id="Flow_AssessInitial_ReworkChoice" sourceRef="Task_Assess_Initial" targetRef="Gateway_Rework_Choice" />
+    <sequenceFlow id="Flow_ReworkChoice_Skip" name="skip" sourceRef="Gateway_Rework_Choice" targetRef="Gateway_Rework_Join" />
+    <sequenceFlow id="Flow_ReworkChoice_Include" name="include" sourceRef="Gateway_Rework_Choice" targetRef="Task_ManualReview" />
+    <sequenceFlow id="Flow_ManualReview_Rework" sourceRef="Task_ManualReview" targetRef="Task_Rework" />
+    <sequenceFlow id="Flow_Rework_AssessAfterRework" sourceRef="Task_Rework" targetRef="Task_Assess_AfterRework" />
+    <sequenceFlow id="Flow_AssessAfterRework_ReworkJoin" sourceRef="Task_Assess_AfterRework" targetRef="Gateway_Rework_Join" />
+    <sequenceFlow id="Flow_ReworkJoin_Decide" sourceRef="Gateway_Rework_Join" targetRef="Task_Decide" />
+    <sequenceFlow id="Flow_Decide_Notify" sourceRef="Task_Decide" targetRef="Task_Notify" />
+    <sequenceFlow id="Flow_Notify_Archive" sourceRef="Task_Notify" targetRef="Task_Archive" />
+    <sequenceFlow id="Flow_Archive_End" sourceRef="Task_Archive" targetRef="EndEvent" />
+  </process>
+</definitions>

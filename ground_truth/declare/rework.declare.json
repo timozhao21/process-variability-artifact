@@ -1,0 +1,31 @@
+{
+  "scenario": "rework",
+  "model_role": "hand_authored_ground_truth_declare_projection",
+  "exact_trace_language": "../valid_variants.csv",
+  "note": "This file documents the intended declarative constraints for the rework ground truth. Assess is not marked exactly_one, because the rework variant repeats it. Manual review and Rework are constrained only when they occur.",
+  "activities": ["Register", "Check", "Assess", "Manual review", "Rework", "Decide", "Notify", "Archive"],
+  "templates": ["init", "exactly_one", "response", "precedence", "coexistence"],
+  "constraints": [
+    {"template": "init", "parameters": ["Register"]},
+    {"template": "exactly_one", "parameters": ["Register"]},
+    {"template": "exactly_one", "parameters": ["Check"]},
+    {"template": "exactly_one", "parameters": ["Decide"]},
+    {"template": "exactly_one", "parameters": ["Notify"]},
+    {"template": "exactly_one", "parameters": ["Archive"]},
+    {"template": "response", "parameters": ["Register", "Check"]},
+    {"template": "response", "parameters": ["Check", "Assess"]},
+    {"template": "response", "parameters": ["Assess", "Decide"]},
+    {"template": "response", "parameters": ["Manual review", "Rework"]},
+    {"template": "response", "parameters": ["Rework", "Assess"]},
+    {"template": "response", "parameters": ["Decide", "Notify"]},
+    {"template": "response", "parameters": ["Notify", "Archive"]},
+    {"template": "precedence", "parameters": ["Register", "Check"]},
+    {"template": "precedence", "parameters": ["Check", "Assess"]},
+    {"template": "precedence", "parameters": ["Assess", "Manual review"]},
+    {"template": "precedence", "parameters": ["Manual review", "Rework"]},
+    {"template": "precedence", "parameters": ["Assess", "Decide"]},
+    {"template": "precedence", "parameters": ["Decide", "Notify"]},
+    {"template": "precedence", "parameters": ["Notify", "Archive"]},
+    {"template": "coexistence", "parameters": ["Manual review", "Rework"]}
+  ]
+}
