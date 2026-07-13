@@ -358,29 +358,29 @@ def draw_representative_discovered_models() -> None:
     low_records = json.loads((low_path / "declare_model.json").read_text())
     high_records = json.loads((high_path / "declare_model.json").read_text())
 
-    fig = plt.figure(figsize=(10.6, 5.7))
-    grid = fig.add_gridspec(2, 2, height_ratios=[1.35, 0.72], width_ratios=[1.30, 0.90], hspace=0.34, wspace=0.28)
+    fig = plt.figure(figsize=(10.6, 6.2))
+    grid = fig.add_gridspec(3, 1, height_ratios=[1.10, 0.78, 0.58], hspace=0.28)
     bpmn_ax = fig.add_subplot(grid[0, 0])
-    declare_ax = fig.add_subplot(grid[0, 1])
-    explanation_ax = fig.add_subplot(grid[1, :])
+    declare_ax = fig.add_subplot(grid[1, 0])
+    explanation_ax = fig.add_subplot(grid[2, 0])
 
     bpmn_ax.set_title("Exported BPMN, rework $p=0.05$, seed 1001", fontsize=11, weight="bold", pad=8)
-    bpmn_ax.set_xlim(-0.04, 1.12)
+    bpmn_ax.set_xlim(-0.03, 1.03)
     bpmn_ax.set_ylim(0, 1)
     bpmn_ax.axis("off")
     positions = {
-        "start": (0.025, 0.50),
-        "Register": (0.10, 0.50),
-        "Check": (0.25, 0.50),
-        "Assess": (0.40, 0.50),
-        "XOR split": (0.55, 0.50),
-        "Decide": (0.70, 0.50),
-        "Notify": (0.84, 0.50),
-        "Archive": (0.98, 0.50),
-        "end": (1.08, 0.50),
-        "Manual review": (0.65, 0.78),
-        "Rework": (0.87, 0.78),
-        "XOR join": (0.55, 0.23),
+        "start": (0.03, 0.50),
+        "Register": (0.13, 0.50),
+        "Check": (0.26, 0.50),
+        "Assess": (0.39, 0.50),
+        "XOR split": (0.52, 0.50),
+        "Decide": (0.65, 0.50),
+        "Notify": (0.77, 0.50),
+        "Archive": (0.89, 0.50),
+        "end": (0.98, 0.50),
+        "Manual review": (0.59, 0.80),
+        "Rework": (0.75, 0.80),
+        "XOR join": (0.52, 0.22),
     }
     for source_id, target_id in edges:
         if nodes[source_id] not in {"Manual review", "Rework", "XOR join"} and nodes[target_id] not in {"Manual review", "Rework", "XOR join"}:
@@ -410,17 +410,17 @@ def draw_representative_discovered_models() -> None:
                 *position,
                 label,
                 "#b45309" if label in {"Manual review", "Rework"} else "#475569",
-                width=0.13 if label == "Manual review" else 0.092,
-                fontsize=7.5 if label == "Manual review" else 7.6,
+                width=0.13 if label == "Manual review" else 0.10,
+                fontsize=7.5 if label == "Manual review" else 8.0,
             )
     main_flow = ["start", "Register", "Check", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
-    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.046, "Check": 0.046, "Assess": 0.046, "Decide": 0.046, "Notify": 0.046, "Archive": 0.046}
+    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.05, "Check": 0.05, "Assess": 0.05, "Decide": 0.05, "Notify": 0.05, "Archive": 0.05}
     for source_label, target_label in zip(main_flow, main_flow[1:]):
         y = positions[source_label][1]
         start = (positions[source_label][0] + half_width[source_label], y)
         end = (positions[target_label][0] - half_width[target_label], y)
         _arrow(bpmn_ax, start, end, "#475569", linewidth=2.0)
-    bpmn_ax.text(0.55, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
+    bpmn_ax.text(0.52, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
 
     declare_ax.set_title("Selected exported Declare records", fontsize=11, weight="bold", pad=8)
     declare_ax.set_xlim(0, 1)
@@ -431,15 +431,15 @@ def draw_representative_discovered_models() -> None:
     _constraint_record(high_records, "coexistence", ("Manual review", "Rework"))
     _constraint_record(high_records, "succession", ("Manual review", "Rework"))
     _constraint_record(high_records, "response", ("Rework", "Assess"))
-    declare_ax.add_patch(FancyBboxPatch((0.01, 0.53), 0.98, 0.40, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#fecaca", facecolor="#fff7f7"))
-    declare_ax.add_patch(FancyBboxPatch((0.01, 0.05), 0.98, 0.40, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#bbf7d0", facecolor="#f0fdf4"))
-    declare_ax.text(0.04, 0.84, "Seed 1001: 37/67 constraints", fontsize=9.2, weight="bold", color="#7f1d1d")
-    declare_ax.text(0.06, 0.70, f"exactly_one(Assess)  c={low_exact['confidence_ratio']:.3f}", fontsize=8.5, family="monospace", color="#b91c1c")
-    declare_ax.text(0.06, 0.59, "succession(Check, Assess)", fontsize=8.5, family="monospace", color="#475569")
-    declare_ax.text(0.04, 0.36, "Seed 1004: 64/96 constraints", fontsize=9.2, weight="bold", color="#166534")
-    declare_ax.text(0.06, 0.25, "coexistence(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
-    declare_ax.text(0.06, 0.15, "succession(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
-    declare_ax.text(0.06, 0.07, "response(Rework, Assess)", fontsize=8.1, family="monospace", color="#15803d")
+    declare_ax.add_patch(FancyBboxPatch((0.01, 0.08), 0.47, 0.80, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#fecaca", facecolor="#fff7f7"))
+    declare_ax.add_patch(FancyBboxPatch((0.52, 0.08), 0.47, 0.80, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#bbf7d0", facecolor="#f0fdf4"))
+    declare_ax.text(0.04, 0.72, "Seed 1001: 37/67 constraints", fontsize=9.2, weight="bold", color="#7f1d1d")
+    declare_ax.text(0.06, 0.50, f"exactly_one(Assess)  c={low_exact['confidence_ratio']:.3f}", fontsize=8.5, family="monospace", color="#b91c1c")
+    declare_ax.text(0.06, 0.31, "succession(Check, Assess)", fontsize=8.5, family="monospace", color="#475569")
+    declare_ax.text(0.55, 0.72, "Seed 1004: 64/96 constraints", fontsize=9.2, weight="bold", color="#166534")
+    declare_ax.text(0.57, 0.50, "coexistence(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
+    declare_ax.text(0.57, 0.31, "succession(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
+    declare_ax.text(0.57, 0.15, "response(Rework, Assess)", fontsize=8.1, family="monospace", color="#15803d")
 
     explanation_ax.set_xlim(0, 1)
     explanation_ax.set_ylim(0, 1)
