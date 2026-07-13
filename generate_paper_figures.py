@@ -106,6 +106,8 @@ def _arrow(
     curve: float = 0.0,
     linestyle: str | None = None,
     linewidth: float = 1.4,
+    shrinkA: float = 2.0,
+    shrinkB: float = 2.0,
 ) -> None:
     line_style = linestyle if linestyle is not None else ("--" if dashed else "-")
     ax.add_patch(
@@ -118,6 +120,8 @@ def _arrow(
             color=color,
             linestyle=line_style,
             connectionstyle=f"arc3,rad={curve}",
+            shrinkA=shrinkA,
+            shrinkB=shrinkB,
         )
     )
 
@@ -395,6 +399,8 @@ def draw_representative_discovered_models() -> None:
             "#b45309" if loop_edge else "#475569",
             curve=0.12 if loop_edge else 0.0,
             linewidth=1.9 if loop_edge else 1.7,
+            shrinkA=0,
+            shrinkB=0,
         )
     for label, position in positions.items():
         if label not in nodes.values():
@@ -419,7 +425,7 @@ def draw_representative_discovered_models() -> None:
         y = positions[source_label][1]
         start = (positions[source_label][0] + half_width[source_label], y)
         end = (positions[target_label][0] - half_width[target_label], y)
-        _arrow(bpmn_ax, start, end, "#475569", linewidth=2.0)
+        _arrow(bpmn_ax, start, end, "#475569", linewidth=2.0, shrinkA=0, shrinkB=0)
     bpmn_ax.text(0.52, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
 
     declare_ax.set_title("Selected exported Declare records", fontsize=11, weight="bold", pad=8)
