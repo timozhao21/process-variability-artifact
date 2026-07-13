@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.path import Path as MplPath
 import numpy as np
 import pandas as pd
 
@@ -20,11 +21,13 @@ GROUND_TRUTH_VISUALS = ROOT / "ground_truth" / "visuals"
 COLORS = {"optional": "#187b75", "order": "#2f63d9", "rework": "#b45309"}
 
 
-def _save(fig: plt.Figure, directory: Path, name: str, *, png: bool = False) -> None:
+def _save(fig: plt.Figure, directory: Path, name: str, *, png: bool = False, svg: bool = False) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     if png:
-        fig.savefig(directory / f"{name}.png", dpi=220, bbox_inches="tight")
-    fig.savefig(directory / f"{name}.pdf", dpi=220, bbox_inches="tight")
+        fig.savefig(directory / f"{name}.png", dpi=220, bbox_inches="tight", pad_inches=0.04, facecolor="white")
+    fig.savefig(directory / f"{name}.pdf", dpi=220, bbox_inches="tight", pad_inches=0.04, facecolor="white")
+    if svg:
+        fig.savefig(directory / f"{name}.svg", bbox_inches="tight", pad_inches=0.04, facecolor="white")
     plt.close(fig)
 
 
@@ -334,16 +337,17 @@ def _model_box(
     text: str,
     color: str = "#334155",
     width: float = 0.11,
+    height: float = 0.104,
     fontsize: float = 8.0,
 ) -> None:
     label = "Manual\nreview" if text == "Manual review" else text
     ax.add_patch(
         FancyBboxPatch(
-            (x - width / 2, y - 0.052),
+            (x - width / 2, y - height / 2),
             width,
-            0.104,
+            height,
             boxstyle="round,pad=0.01,rounding_size=0.01",
-            linewidth=1.5,
+            linewidth=1.3,
             edgecolor=color,
             facecolor="#f8fafc",
         )
@@ -351,84 +355,166 @@ def _model_box(
     ax.text(x, y, label, ha="center", va="center", fontsize=fontsize, color="#1e293b", linespacing=0.9)
 
 
+def _bezier_arrow(
+    ax: plt.Axes,
+    start: tuple[float, float],
+    control_one: tuple[float, float],
+    control_two: tuple[float, float],
+    end: tuple[float, float],
+    color: str,
+    linewidth: float = 1.4,
+) -> None:
+    path = MplPath(
+        [start, control_one, control_two, end],
+        [MplPath.MOVETO, MplPath.CURVE4, MplPath.CURVE4, MplPath.CURVE4],
+    )
+    ax.add_patch(
+        FancyArrowPatch(
+            path=path,
+            arrowstyle="->",
+            mutation_scale=9,
+            linewidth=linewidth,
+            color=color,
+            shrinkA=0,
+            shrinkB=0,
+            zorder=1,
+        )
+    )
+
+
 def draw_representative_discovered_models() -> None:
-    """Show a readable, simplified view derived from two exported models."""
+    """Show a readable, directed view derived from the exported models."""
     base = ROOT / "outputs" / "main" / "artifacts"
-    seed_low = 1001
-    seed_high = 1004
     low_path = base / "rework_p0p05_seed1001_im0p00_ds0p05_dc0p95"
     high_path = base / "rework_p0p05_seed1004_im0p00_ds0p05_dc0p95"
     nodes, edges = _read_bpmn_graph(low_path / "imperative_model.bpmn")
     low_records = json.loads((low_path / "declare_model.json").read_text())
     high_records = json.loads((high_path / "declare_model.json").read_text())
 
-    fig = plt.figure(figsize=(10.6, 6.2))
-    grid = fig.add_gridspec(3, 1, height_ratios=[1.10, 0.78, 0.58], hspace=0.28)
+    directed_edges = {(nodes[source], nodes[target]) for source, target in edges}
+    expected_edges = {
+        ("start", "Register"),
+        ("Register", "Check"),
+        ("Check", "XOR join"),
+        ("XOR join", "Assess"),
+        ("Assess", "XOR split"),
+        ("XOR split", "Decide"),
+        ("Decide", "Notify"),
+        ("Notify", "Archive"),
+        ("Archive", "end"),
+        ("XOR split", "Manual review"),
+        ("Manual review", "Rework"),
+        ("Rework", "XOR join"),
+    }
+    if directed_edges != expected_edges:
+        raise ValueError(f"Unexpected directed BPMN graph: {sorted(directed_edges)}")
+
+    fig = plt.figure(figsize=(5.2, 3.55))
+    grid = fig.add_gridspec(3, 1, height_ratios=[1.00, 0.70, 0.92])
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.90, bottom=0.05, hspace=0.30)
     bpmn_ax = fig.add_subplot(grid[0, 0])
     declare_ax = fig.add_subplot(grid[1, 0])
     explanation_ax = fig.add_subplot(grid[2, 0])
 
-    bpmn_ax.set_title("Exported BPMN, rework $p=0.05$, seed 1001", fontsize=11, weight="bold", pad=8)
+    bpmn_ax.set_title("Exported BPMN: rework ($p = 0.05$, seed 1001)", fontsize=10.5, weight="semibold", pad=5)
     bpmn_ax.set_xlim(-0.03, 1.03)
     bpmn_ax.set_ylim(0, 1)
     bpmn_ax.axis("off")
-    positions = {
-        "start": (0.03, 0.50),
-        "Register": (0.13, 0.50),
-        "Check": (0.26, 0.50),
-        "Assess": (0.39, 0.50),
-        "XOR split": (0.52, 0.50),
-        "Decide": (0.65, 0.50),
-        "Notify": (0.77, 0.50),
-        "Archive": (0.89, 0.50),
-        "end": (0.98, 0.50),
-        "Manual review": (0.59, 0.80),
-        "Rework": (0.75, 0.80),
-        "XOR join": (0.52, 0.22),
+    baseline = ["start", "Register", "Check", "XOR join", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
+    positions = {label: (float(x), 0.47) for label, x in zip(baseline, np.linspace(0.04, 0.96, len(baseline)), strict=True)}
+    positions.update({"Manual review": (0.62, 0.80), "Rework": (0.76, 0.80)})
+    half_width = {
+        "start": 0.022,
+        "end": 0.022,
+        "XOR join": 0.035,
+        "XOR split": 0.035,
+        "Register": 0.04,
+        "Check": 0.04,
+        "Assess": 0.04,
+        "Decide": 0.04,
+        "Notify": 0.04,
+        "Archive": 0.04,
+        "Manual review": 0.055,
+        "Rework": 0.04,
     }
-    for source_id, target_id in edges:
-        if nodes[source_id] not in {"Manual review", "Rework", "XOR join"} and nodes[target_id] not in {"Manual review", "Rework", "XOR join"}:
-            continue
-        source = positions[nodes[source_id]]
-        target = positions[nodes[target_id]]
-        loop_edge = nodes[source_id] in {"Manual review", "Rework", "XOR join"} or nodes[target_id] in {"Manual review", "Rework", "XOR join"}
+    shape_height = {label: 0.10 for label in baseline}
+    shape_height.update({"XOR join": 0.07, "XOR split": 0.07, "Manual review": 0.13, "Rework": 0.10})
+    shape_width = {label: 0.08 for label in baseline}
+    shape_width.update({"XOR join": 0.07, "XOR split": 0.07, "Manual review": 0.11, "Rework": 0.08})
+
+    def edge_point(label: str, side: str) -> tuple[float, float]:
+        x, y = positions[label]
+        if side == "left":
+            return x - half_width[label], y
+        if side == "right":
+            return x + half_width[label], y
+        if side == "top":
+            return x, y + shape_height[label] / 2
+        if side == "bottom":
+            return x, y - shape_height[label] / 2
+        raise ValueError(side)
+
+    for source_label, target_label in zip(baseline, baseline[1:]):
         _arrow(
             bpmn_ax,
-            source,
-            target,
-            "#b45309" if loop_edge else "#475569",
-            curve=0.12 if loop_edge else 0.0,
-            linewidth=1.9 if loop_edge else 1.7,
+            edge_point(source_label, "right"),
+            edge_point(target_label, "left"),
+            "#475569",
+            linewidth=1.4,
             shrinkA=0,
             shrinkB=0,
         )
+
+    _arrow(
+        bpmn_ax,
+        edge_point("XOR split", "top"),
+        edge_point("Manual review", "bottom"),
+        "#b45309",
+        curve=0.05,
+        linewidth=1.4,
+        shrinkA=0,
+        shrinkB=0,
+    )
+    _arrow(
+        bpmn_ax,
+        edge_point("Manual review", "right"),
+        edge_point("Rework", "left"),
+        "#b45309",
+        linewidth=1.4,
+        shrinkA=0,
+        shrinkB=0,
+    )
+    rework_start = (positions["Rework"][0] - shape_width["Rework"] / 2, positions["Rework"][1] - shape_height["Rework"] / 2)
+    merge_end = edge_point("XOR join", "top")
+    _bezier_arrow(
+        bpmn_ax,
+        rework_start,
+        (0.68, 0.54),
+        (0.47, 0.31),
+        merge_end,
+        "#b45309",
+        linewidth=1.4,
+    )
+
     for label, position in positions.items():
         if label not in nodes.values():
             continue
         if label in {"XOR split", "XOR join"}:
-            bpmn_ax.scatter(*position, s=180, marker="D", color="#f59e0b", edgecolor="#92400e", zorder=3)
-            bpmn_ax.text(*position, "X", ha="center", va="center", fontsize=8, weight="bold", zorder=4)
+            bpmn_ax.scatter(*position, s=170, marker="D", color="#f59e0b", edgecolor="#92400e", linewidth=1.1, zorder=3)
+            bpmn_ax.text(*position, "X", ha="center", va="center", fontsize=7.5, weight="bold", zorder=4)
         elif label in {"start", "end"}:
-            bpmn_ax.scatter(*position, s=90, color="#94a3b8", edgecolor="#334155", zorder=3)
+            bpmn_ax.scatter(*position, s=80, color="#94a3b8", edgecolor="#334155", linewidth=1.0, zorder=3)
         else:
             _model_box(
                 bpmn_ax,
                 *position,
                 label,
                 "#b45309" if label in {"Manual review", "Rework"} else "#475569",
-                width=0.11 if label == "Manual review" else 0.08,
-                fontsize=7.2 if label == "Manual review" else 7.6,
+                width=shape_width[label],
+                height=shape_height[label],
+                fontsize=7.2 if label == "Manual review" else 8.0,
             )
-    main_flow = ["start", "Register", "Check", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
-    half_width = {"start": 0.022, "end": 0.022, "XOR split": 0.035, "Register": 0.04, "Check": 0.04, "Assess": 0.04, "Decide": 0.04, "Notify": 0.04, "Archive": 0.04}
-    for source_label, target_label in zip(main_flow, main_flow[1:]):
-        y = positions[source_label][1]
-        start = (positions[source_label][0] + half_width[source_label], y)
-        end = (positions[target_label][0] - half_width[target_label], y)
-        _arrow(bpmn_ax, start, end, "#475569", linewidth=2.0, shrinkA=0, shrinkB=0)
-    bpmn_ax.text(0.52, 0.05, "Simplified layout from the exported BPMN graph", ha="center", fontsize=8, color="#64748b")
 
-    declare_ax.set_title("Selected exported Declare records", fontsize=11, weight="bold", pad=8)
     declare_ax.set_xlim(0, 1)
     declare_ax.set_ylim(0, 1)
     declare_ax.axis("off")
@@ -452,11 +538,11 @@ def draw_representative_discovered_models() -> None:
     explanation_ax.axis("off")
     explanation_ax.add_patch(FancyBboxPatch((0.01, 0.04), 0.98, 0.92, boxstyle="round,pad=0.015,rounding_size=0.01", linewidth=1.0, edgecolor="#cbd5e1", facecolor="#f8fafc"))
     explanation_ax.text(0.03, 0.82, "Why the seeds behave differently", fontsize=10, weight="bold", color="#1e293b")
-    explanation_ax.text(0.03, 0.60, "Seed 1001 retains exactly_one(Assess). The model therefore rejects a valid trace with a second Assess", fontsize=8.6, color="#334155")
-    explanation_ax.text(0.03, 0.48, "and reaches F1_cls = 0.588. Seed 1004 omits that rule and retains rework-specific relations,", fontsize=8.6, color="#334155")
-    explanation_ax.text(0.03, 0.36, "so it accepts the valid rework behavior and reaches F1_cls = 1.000.", fontsize=8.6, color="#334155")
-    explanation_ax.text(0.03, 0.16, "Both panels are simplified displays derived from exported discovery models; the complete BPMN and Declare files remain in the artifact.", fontsize=8.0, color="#64748b")
-    _save(fig, FIGURES, "representative_discovered_models")
+    explanation_ax.text(0.03, 0.62, "Seed 1001 retains exactly_one(Assess) and rejects a valid", fontsize=8.6, color="#334155")
+    explanation_ax.text(0.03, 0.45, "second-Assess trace, reaching F1_cls = 0.588. Seed 1004 omits", fontsize=8.6, color="#334155")
+    explanation_ax.text(0.03, 0.28, "that rule and accepts valid rework, reaching F1_cls = 1.000.", fontsize=8.6, color="#334155")
+    explanation_ax.text(0.03, 0.09, "Simplified from exported discovery models; full files remain in the artifact.", fontsize=8.0, color="#64748b")
+    _save(fig, FIGURES, "representative_discovered_models", svg=True)
 
 
 def draw_rework_figures() -> None:
