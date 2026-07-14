@@ -13,6 +13,7 @@ Excluded local-only files:
 - `.Rhistory`
 - `.DS_Store`
 
-The main, noise, rework-sensitivity, and mixed runs include full per-condition
-artifacts. The broader `configs/sensitivity.json` configuration remains a
-prepared extension and is not part of the reported final results.
+The main, noise, rework-sensitivity, mixed, and three focused training-size
+runs include full per-condition artifacts. The broader
+`configs/sensitivity.json` configuration remains a prepared extension and is
+not part of the reported final results.

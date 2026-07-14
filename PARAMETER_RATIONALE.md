@@ -69,6 +69,14 @@ used for descriptive spread and threshold-instability checks; they are not
 presented as a large inferential sample or as a basis for strong significance
 claims.
 
+The focused training-size sensitivity repeats the rework transition at 100,
+350, and 1,000 training traces, with `p=0.00, 0.03, 0.05, 0.07, 0.10` and the
+main Declare thresholds. These sizes show whether sampling width changes the
+transition without turning the exercise into a broad parameter search. At the
+exact population boundary `p=0.05`, a larger sample is not expected to force
+one side of the decision; away from that boundary, it should make the retained
+model more stable across seeds.
+
 The two test classes contain 150 traces each so that classification measures are
 not driven by an arbitrary valid/invalid class imbalance. At this size, every
 valid variant and every documented mutation family is exercised repeatedly,

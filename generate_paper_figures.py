@@ -6,7 +6,6 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
-from matplotlib.path import Path as MplPath
 import numpy as np
 import pandas as pd
 
@@ -111,6 +110,9 @@ def _arrow(
     linewidth: float = 1.4,
     shrinkA: float = 2.0,
     shrinkB: float = 2.0,
+    mutation_scale: float = 10.0,
+    capstyle: str = "round",
+    zorder: float = 1.0,
 ) -> None:
     line_style = linestyle if linestyle is not None else ("--" if dashed else "-")
     ax.add_patch(
@@ -118,13 +120,15 @@ def _arrow(
             start,
             end,
             arrowstyle="->",
-            mutation_scale=10,
+            mutation_scale=mutation_scale,
             linewidth=linewidth,
             color=color,
             linestyle=line_style,
             connectionstyle=f"arc3,rad={curve}",
             shrinkA=shrinkA,
             shrinkB=shrinkB,
+            capstyle=capstyle,
+            zorder=zorder,
         )
     )
 
@@ -355,33 +359,6 @@ def _model_box(
     ax.text(x, y, label, ha="center", va="center", fontsize=fontsize, color="#1e293b", linespacing=0.9)
 
 
-def _bezier_arrow(
-    ax: plt.Axes,
-    start: tuple[float, float],
-    control_one: tuple[float, float],
-    control_two: tuple[float, float],
-    end: tuple[float, float],
-    color: str,
-    linewidth: float = 1.4,
-) -> None:
-    path = MplPath(
-        [start, control_one, control_two, end],
-        [MplPath.MOVETO, MplPath.CURVE4, MplPath.CURVE4, MplPath.CURVE4],
-    )
-    ax.add_patch(
-        FancyArrowPatch(
-            path=path,
-            arrowstyle="->",
-            mutation_scale=9,
-            linewidth=linewidth,
-            color=color,
-            shrinkA=0,
-            shrinkB=0,
-            zorder=1,
-        )
-    )
-
-
 def draw_representative_discovered_models() -> None:
     """Show a readable, directed view derived from the exported models."""
     base = ROOT / "outputs" / "main" / "artifacts"
@@ -417,30 +394,45 @@ def draw_representative_discovered_models() -> None:
     explanation_ax = fig.add_subplot(grid[2, 0])
 
     bpmn_ax.set_title("Exported BPMN: rework ($p = 0.05$, seed 1001)", fontsize=10.5, weight="semibold", pad=5)
-    bpmn_ax.set_xlim(-0.03, 1.03)
+    bpmn_ax.set_xlim(-0.02, 1.16)
     bpmn_ax.set_ylim(0, 1)
     bpmn_ax.axis("off")
     baseline = ["start", "Register", "Check", "XOR join", "Assess", "XOR split", "Decide", "Notify", "Archive", "end"]
-    positions = {label: (float(x), 0.47) for label, x in zip(baseline, np.linspace(0.04, 0.96, len(baseline)), strict=True)}
-    positions.update({"Manual review": (0.62, 0.80), "Rework": (0.76, 0.80)})
+    # Use a constant border-to-border gap so different node widths do not
+    # make some arrows look cramped and others look detached.
     half_width = {
-        "start": 0.022,
-        "end": 0.022,
-        "XOR join": 0.035,
-        "XOR split": 0.035,
-        "Register": 0.04,
-        "Check": 0.04,
-        "Assess": 0.04,
-        "Decide": 0.04,
-        "Notify": 0.04,
-        "Archive": 0.04,
-        "Manual review": 0.055,
-        "Rework": 0.04,
+        "start": 0.019,
+        "end": 0.019,
+        "XOR join": 0.022,
+        "XOR split": 0.022,
+        "Register": 0.046,
+        "Check": 0.046,
+        "Assess": 0.046,
+        "Decide": 0.046,
+        "Notify": 0.046,
+        "Archive": 0.046,
+        "Manual review": 0.060,
+        "Rework": 0.060,
     }
-    shape_height = {label: 0.10 for label in baseline}
-    shape_height.update({"XOR join": 0.07, "XOR split": 0.07, "Manual review": 0.13, "Rework": 0.10})
-    shape_width = {label: 0.08 for label in baseline}
-    shape_width.update({"XOR join": 0.07, "XOR split": 0.07, "Manual review": 0.11, "Rework": 0.08})
+    shape_height = {label: 0.13 for label in baseline}
+    shape_height.update({"XOR join": 0.07, "XOR split": 0.07, "Manual review": 0.17, "Rework": 0.17})
+    shape_width = {label: 0.092 for label in baseline}
+    shape_width.update({"XOR join": 0.064, "XOR split": 0.064, "Manual review": 0.12, "Rework": 0.12})
+
+    # Keep the visible gap between every pair of main-flow borders constant.
+    main_gap = 0.045
+    baseline_x = [0.030]
+    for source_label, target_label in zip(baseline, baseline[1:]):
+        baseline_x.append(
+            baseline_x[-1] + half_width[source_label] + main_gap + half_width[target_label]
+        )
+    positions = {label: (x, 0.47) for label, x in zip(baseline, baseline_x, strict=True)}
+    positions.update(
+        {
+            "Manual review": (positions["XOR split"][0], 0.18),
+            "Rework": (positions["XOR join"][0], 0.18),
+        }
+    )
 
     def edge_point(label: str, side: str) -> tuple[float, float]:
         x, y = positions[label]
@@ -454,54 +446,56 @@ def draw_representative_discovered_models() -> None:
             return x, y - shape_height[label] / 2
         raise ValueError(side)
 
+    # Approximately one pixel in the 220 dpi preview used for figure QA.
+    endpoint_nudge = 0.0011
+    task_labels = {"Register", "Check", "Assess", "Decide", "Notify", "Archive"}
     for source_label, target_label in zip(baseline, baseline[1:]):
+        target_point = edge_point(target_label, "left")
+        if source_label in task_labels and target_label in task_labels:
+            target_point = (target_point[0] - endpoint_nudge, target_point[1])
         _arrow(
             bpmn_ax,
             edge_point(source_label, "right"),
-            edge_point(target_label, "left"),
+            target_point,
             "#475569",
             linewidth=1.4,
             shrinkA=0,
             shrinkB=0,
+            mutation_scale=8.5,
+            capstyle="butt",
+            zorder=0.5,
         )
 
     _arrow(
         bpmn_ax,
-        edge_point("XOR split", "top"),
-        edge_point("Manual review", "bottom"),
+        edge_point("XOR split", "bottom"),
+        edge_point("Manual review", "top"),
         "#b45309",
-        curve=0.05,
         linewidth=1.4,
         shrinkA=0,
         shrinkB=0,
+        mutation_scale=7.5,
+        capstyle="butt",
+        zorder=0.5,
     )
     _arrow(
         bpmn_ax,
-        edge_point("Manual review", "right"),
-        edge_point("Rework", "left"),
+        edge_point("Manual review", "left"),
+        (edge_point("Rework", "right")[0] + endpoint_nudge, edge_point("Rework", "right")[1]),
         "#b45309",
         linewidth=1.4,
         shrinkA=0,
         shrinkB=0,
+        mutation_scale=7.5,
+        capstyle="butt",
+        zorder=0.5,
     )
-    rework_start = (positions["Rework"][0] - shape_width["Rework"] / 2, positions["Rework"][1] - shape_height["Rework"] / 2)
-    merge_end = edge_point("XOR join", "top")
-    _bezier_arrow(
-        bpmn_ax,
-        rework_start,
-        (0.68, 0.54),
-        (0.47, 0.31),
-        merge_end,
-        "#b45309",
-        linewidth=1.4,
-    )
-
     for label, position in positions.items():
         if label not in nodes.values():
             continue
         if label in {"XOR split", "XOR join"}:
-            bpmn_ax.scatter(*position, s=170, marker="D", color="#f59e0b", edgecolor="#92400e", linewidth=1.1, zorder=3)
-            bpmn_ax.text(*position, "X", ha="center", va="center", fontsize=7.5, weight="bold", zorder=4)
+            bpmn_ax.scatter(*position, s=105, marker="D", color="#f59e0b", edgecolor="#92400e", linewidth=1.0, zorder=3)
+            bpmn_ax.text(*position, "X", ha="center", va="center", fontsize=6.5, weight="bold", zorder=4)
         elif label in {"start", "end"}:
             bpmn_ax.scatter(*position, s=80, color="#94a3b8", edgecolor="#334155", linewidth=1.0, zorder=3)
         else:
@@ -512,8 +506,21 @@ def draw_representative_discovered_models() -> None:
                 "#b45309" if label in {"Manual review", "Rework"} else "#475569",
                 width=shape_width[label],
                 height=shape_height[label],
-                fontsize=7.2 if label == "Manual review" else 8.0,
+                fontsize=7.2 if label == "Manual review" else 7.5,
             )
+
+    _arrow(
+        bpmn_ax,
+        edge_point("Rework", "top"),
+        edge_point("XOR join", "bottom"),
+        "#b45309",
+        linewidth=1.4,
+        shrinkA=0,
+        shrinkB=0,
+        mutation_scale=7.5,
+        capstyle="butt",
+        zorder=0.5,
+    )
 
     declare_ax.set_xlim(0, 1)
     declare_ax.set_ylim(0, 1)
@@ -524,14 +531,14 @@ def draw_representative_discovered_models() -> None:
     _constraint_record(high_records, "succession", ("Manual review", "Rework"))
     _constraint_record(high_records, "response", ("Rework", "Assess"))
     declare_ax.add_patch(FancyBboxPatch((0.01, 0.08), 0.47, 0.80, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#fecaca", facecolor="#fff7f7"))
-    declare_ax.add_patch(FancyBboxPatch((0.52, 0.08), 0.47, 0.80, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#bbf7d0", facecolor="#f0fdf4"))
+    declare_ax.add_patch(FancyBboxPatch((0.50, 0.08), 0.49, 0.80, boxstyle="round,pad=0.012,rounding_size=0.01", linewidth=0.8, edgecolor="#bbf7d0", facecolor="#f0fdf4"))
     declare_ax.text(0.04, 0.72, "Seed 1001: 37/67 constraints", fontsize=9.2, weight="bold", color="#7f1d1d")
     declare_ax.text(0.06, 0.50, f"exactly_one(Assess)  c={low_exact['confidence_ratio']:.3f}", fontsize=8.5, family="monospace", color="#b91c1c")
     declare_ax.text(0.06, 0.31, "succession(Check, Assess)", fontsize=8.5, family="monospace", color="#475569")
-    declare_ax.text(0.55, 0.72, "Seed 1004: 64/96 constraints", fontsize=9.2, weight="bold", color="#166534")
-    declare_ax.text(0.57, 0.50, "coexistence(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
-    declare_ax.text(0.57, 0.31, "succession(Manual review, Rework)", fontsize=8.1, family="monospace", color="#15803d")
-    declare_ax.text(0.57, 0.15, "response(Rework, Assess)", fontsize=8.1, family="monospace", color="#15803d")
+    declare_ax.text(0.53, 0.76, "Seed 1004: 64/96 constraints", fontsize=8.7, weight="bold", color="#166534")
+    declare_ax.text(0.53, 0.53, "coexistence(Manual review, Rework)", fontsize=6.7, family="monospace", color="#15803d")
+    declare_ax.text(0.53, 0.33, "succession(Manual review, Rework)", fontsize=6.7, family="monospace", color="#15803d")
+    declare_ax.text(0.53, 0.13, "response(Rework, Assess)", fontsize=6.7, family="monospace", color="#15803d")
 
     explanation_ax.set_xlim(0, 1)
     explanation_ax.set_ylim(0, 1)

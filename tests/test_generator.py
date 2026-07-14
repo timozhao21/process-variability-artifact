@@ -88,3 +88,23 @@ def test_ground_truth_variant_table_matches_generator() -> None:
 
     for scenario in ("baseline", "optional", "order", "rework", "mixed"):
         assert documented[scenario] == set(valid_variants(scenario, 0.5))
+
+
+def test_mixed_probability_formula_sums_to_one() -> None:
+    for probability in (0.05, 0.2, 0.5):
+        non_rework = sum(
+            probability ** (order + documents + review)
+            * (1 - probability) ** (4 - order - documents - review)
+            for order in (0, 1)
+            for documents in (0, 1)
+            for review in (0, 1)
+        )
+        rework = sum(
+            probability ** (order + documents + 1)
+            * (1 - probability) ** (2 - order - documents)
+            for order in (0, 1)
+            for documents in (0, 1)
+        )
+        assert abs(non_rework - (1 - probability)) < 1e-12
+        assert abs(rework - probability) < 1e-12
+        assert abs(non_rework + rework - 1) < 1e-12

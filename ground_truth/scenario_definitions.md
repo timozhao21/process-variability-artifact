@@ -74,6 +74,16 @@ valid variability mechanisms instead of isolating them:
 This creates twelve valid variants when `p > 0`. The exact finite trace language
 is listed in `valid_variants.csv`.
 
+For binary indicators `o` (swapped order), `d` (optional documents), and `m`
+(optional review), a non-rework variant has unconditional probability
+`p**(o+d+m) * (1-p)**(4-o-d-m)`. If rework is present, optional review is not
+sampled and the variant probability is
+`p**(o+d+1) * (1-p)**(2-o-d)`. The eight non-rework variants sum to `1-p`; the
+four rework variants sum to `p`. These expressions follow directly from the
+independent Bernoulli sampling rules: the exponent of `p` counts present
+mechanisms and the exponent of `1-p` counts absent decisions, including `r=0`
+for a non-rework variant.
+
 ## Noise Scenario
 
 The noise scenario is separate from valid variability. It starts from the

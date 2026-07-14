@@ -1,18 +1,18 @@
 # Spaghetti Experiment
 
-This repository contains the experimental artifacts for a reproducible comparison
-of automatically discovered imperative and declarative process models under
-different types and prevalence levels of valid variants.
+This repository contains the complete experimental artifacts for a reproducible
+comparison of automatically discovered imperative and declarative process
+models under different types and prevalence levels of valid variants.
 
 Research question:
 
-> How do the type and prevalence of valid process variants affect the structural
-> complexity and behavioral quality of automatically discovered imperative and
-> declarative process models?
+> How do the type and prevalence of valid process variants affect structural
+> proxies and controlled behavioral discrimination in automatically discovered
+> imperative and declarative process models?
 
-The experiment studies structural complexity and behavioral quality. It does not
-include a user study; therefore, model understandability is only addressed
-through structural proxy metrics.
+The experiment studies structural proxies and controlled trace-level behavioral
+discrimination. It does not include a user study; therefore, model
+understandability is only addressed through structural proxy metrics.
 
 The parameter choices are documented in `PARAMETER_RATIONALE.md`.
 
@@ -62,8 +62,9 @@ and balanced mutation families.
 ```
 
 Expected result: all tests pass and the verifier prints one `OK` line for each
-included run (`main`, `mixed`, `noise`, `pilot`, and `rework_sensitivity`)
-without an error or traceback.
+included run (`main`, `mixed`, `noise`, `pilot`, `rework_sensitivity`,
+`training_size_100`, `training_size_350`, and `training_size_1000`) without an
+error or traceback.
 
 For the main run, verification also checks the rework-threshold evidence shown
 in the paper:
@@ -96,28 +97,31 @@ Afterwards, inspect `outputs/pilot/results.csv`, select one matching row in
 ### 4. Reproduce all reported experiments
 
 ```bash
-for config in main mixed noise rework_sensitivity; do
+for config in main mixed noise rework_sensitivity \
+  training_size_100 training_size_350 training_size_1000; do
   .venv/bin/python run_experiment.py \
     --config "configs/${config}.json" \
     --output outputs
 done
 
-for experiment in main mixed noise rework_sensitivity; do
+for experiment in main mixed noise rework_sensitivity \
+  training_size_100 training_size_350 training_size_1000; do
   .venv/bin/python analyze_results.py \
     --input "outputs/${experiment}/results.csv" \
     --output "outputs/${experiment}/analysis"
 done
 
+.venv/bin/python summarize_training_size_sensitivity.py
 .venv/bin/python generate_paper_figures.py
 .venv/bin/python verify_artifacts.py --outputs outputs
 ```
 
-The recorded computation time of the submitted conditions is about 2.3 minutes
-in total on the development machine; file export and hardware differences can
-increase wall-clock time, so allowing several minutes is appropriate. The
-focused rework-sensitivity run is the largest part with 450 conditions. Figure
-generation writes the paper plots to `../paper/figures/` and the ground-truth
-companions to `ground_truth/visuals/`.
+The summed recorded condition runtime, including the three training-size runs,
+is about 4.1 minutes on the development machine; file export and hardware
+differences can increase wall-clock time, so allowing several minutes is
+appropriate. The focused rework-sensitivity run is the largest part with 450
+conditions. Figure generation writes the paper plots to `../paper/figures/`
+and the ground-truth companions to `ground_truth/visuals/`.
 
 The paper-facing figures include `structural_summary.pdf`,
 `rework_threshold_effect.pdf`, `representative_discovered_models.pdf` and
@@ -143,6 +147,9 @@ configs/
   noise.json          separate observation-noise experiment
   mixed.json          supplementary mixed-variability experiment
   rework_sensitivity.json reported focused threshold-robustness experiment
+  training_size_100.json focused rework run with 100 training traces
+  training_size_350.json focused rework run with 350 training traces
+  training_size_1000.json focused rework run with 1,000 training traces
   sensitivity.json    prepared sensitivity configuration
 ground_truth/          documented synthetic valid-behavior specification
   bpmn/                hand-authored BPMN ground-truth files
@@ -158,6 +165,7 @@ src/spaghetti_experiment/
   analysis.py         aggregation and plot generation
   artifacts.py        CSV, XES, PNML, BPMN, and JSON export
 generate_paper_figures.py regenerates paper and ground-truth figures
+summarize_training_size_sensitivity.py combines the three training-size runs
 tests/                 unit and integration tests
 outputs/               generated experiment outputs
 ```
@@ -197,9 +205,14 @@ The mixed generator uses independent Bernoulli(`p`) decisions for swapped order,
 optional documents and rework. When rework is absent, a fourth Bernoulli(`p`)
 decision controls optional review; when rework is present, the distinct manual
 review is part of the rework path. This yields eight non-rework variants and four rework
-variants. For a binary decision vector `(o,d,r,m)`, the non-rework probability is
-`p**(o+d+m) * (1-p)**(3-o-d-m)` and the rework probability is
-`p**(o+d+1) * (1-p)**(2-o-d)`, with `m=0` when `r=1`.
+variants. For binary indicators `o`, `d`, and `m`, an unconditional non-rework
+variant has probability `p**(o+d+m) * (1-p)**(4-o-d-m)`. A rework variant has
+probability `p**(o+d+1) * (1-p)**(2-o-d)`; optional review is not sampled when
+rework is present. The non-rework and rework groups therefore sum to `1-p` and
+`p`, respectively. These expressions are derived directly from the generator's
+independent Bernoulli sampling rules: the exponent of `p` counts present
+mechanisms, while the exponent of `1-p` counts absent decisions, including
+`r=0` in the non-rework case.
 
 For the noise scenario, a corrupted case receives exactly one uniformly selected
 operator: deletion at a uniform event position, an adjacent swap at a uniform
@@ -424,10 +437,14 @@ The included generated outputs are:
 - `outputs/noise` with full per-condition artifacts
 - `outputs/rework_sensitivity` with full per-condition artifacts
 - `outputs/mixed` with full per-condition artifacts
+- `outputs/training_size_100`, `outputs/training_size_350`, and
+  `outputs/training_size_1000` with focused rework artifacts
 
 The main run has 210 result rows, mixed has 70, noise has 60, the focused
-rework-sensitivity run has 450, and the pilot has 27. These counts provide a
-quick completeness check before inspecting individual conditions.
+rework-sensitivity run has 450, each training-size run has 50, and the pilot has
+27. These counts provide a quick completeness check before inspecting individual
+conditions. The combined training-size report is
+`outputs/training_size_sensitivity_summary.csv`.
 
 When artifact export is enabled, each condition folder additionally contains:
 
@@ -445,9 +462,9 @@ declare_model.json
 `manifest.json` records the configuration and software versions used for the
 run.
 
-The main, noise, rework-sensitivity, and mixed runs export the complete
-traceable artifact chain. Each result row can therefore be traced back to the
-generated logs, discovered models, and invalid mutations used for that
+The main, noise, rework-sensitivity, mixed, and training-size runs export the
+complete traceable artifact chain. Each result row can therefore be traced back
+to the generated logs, discovered models, and invalid mutations used for that
 condition.
 
 ## Traceability
